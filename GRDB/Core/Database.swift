@@ -680,13 +680,12 @@ public extension TransactionObserverType {
 /**
 A function that is executed after a transaction has completed.
 
-- parameter db: A Database.
 - parameter completion: .Commit or .Rollback
 - parameter insertedRowID: An eventual inserted rowID. It is set if and only if
   the completed transaction was an implicit transaction around an
   INSERT statement.
 */
-public typealias TransactionCompletionCallback = (db: Database, completion: TransactionCompletion, insertedRowID: Int64?) -> ()
+public typealias TransactionCompletionCallback = (completion: TransactionCompletion, insertedRowID: Int64?) -> ()
 
 
 // =============================================================================
@@ -721,7 +720,7 @@ private class TransactionCompletionObserver {
     func updateStatementDidComplete(db: Database, completion: TransactionCompletion?) {
         if let completion = completion {
             for callback in callbacks {
-                callback(db: db, completion: completion, insertedRowID: insertedRowID)
+                callback(completion: completion, insertedRowID: insertedRowID)
             }
             callbacks.removeAll()
         }

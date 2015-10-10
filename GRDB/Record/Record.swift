@@ -414,7 +414,7 @@ public class Record : RowConvertible, DatabaseTableMapping, DatabaseStorable {
         lastWriteOperation = .Insert
         
         if let automaticRowIDColumnName = automaticRowIDColumnName {
-            let changes = try dataMapper.insertStatement().execute { (db, completion, insertedRowID) in
+            let changes = try dataMapper.insertStatement().execute { (completion, insertedRowID) in
                 switch completion {
                 case .Commit:
                     // Insertion was committed...
@@ -435,7 +435,7 @@ public class Record : RowConvertible, DatabaseTableMapping, DatabaseStorable {
             
             updateFromRow(Row(dictionary: [automaticRowIDColumnName: changes.insertedRowID!]))
         } else {
-            try dataMapper.insertStatement().execute { (db, completion, insertedRowID) in
+            try dataMapper.insertStatement().execute { (completion, _) in
                 self.didWrite(db, completion: completion)
             }
         }
@@ -464,7 +464,7 @@ public class Record : RowConvertible, DatabaseTableMapping, DatabaseStorable {
     */
     public func update(db: Database) throws {
         lastWriteOperation = .Update
-        let changes = try DataMapper(db, self).updateStatement().execute { (db, completion, _) in
+        let changes = try DataMapper(db, self).updateStatement().execute { (completion, _) in
             self.didWrite(db, completion: completion)
         }
         if changes.changedRowCount == 0 {
@@ -518,7 +518,7 @@ public class Record : RowConvertible, DatabaseTableMapping, DatabaseStorable {
     */
     public func delete(db: Database) throws -> DeletionResult {
         lastWriteOperation = .Delete
-        let changes = try DataMapper(db, self).deleteStatement().execute { (db, completion, _) in
+        let changes = try DataMapper(db, self).deleteStatement().execute { (completion, _) in
             self.didWrite(db, completion: completion)
         }
         
