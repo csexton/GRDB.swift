@@ -389,27 +389,49 @@ public class Record : RowConvertible, DatabaseTableMapping, DatabaseStorable {
     This method is guaranteed to have inserted a row in the database if it
     returns without error.
     
+    Records whose primary key is declared as "INTEGER PRIMARY KEY" have their
+    id automatically set after successful insertion, if it was nil before the
+    insertion. This automatic id is reset to nil, should the insertion get
+    eventually rollbacked.
+    
     - parameter db: A Database.
     - throws: A DatabaseError whenever a SQLite error occurs.
     */
     public func insert(db: Database) throws {
         let dataMapper = DataMapper(db, self)
         
+        // automaticRowID is true if and only if record has a nil INTEGER PRIMARY KEY id.
+        let automaticRowID: Bool
+        if case let .Managed(idColumnName) = dataMapper.primaryKey {
+            if let rowID = dataMapper.storedDatabaseDictionary[idColumnName] {
+                automaticRowID = (rowID == nil)
+            } else {
+                fatalError("\(self.dynamicType).storedDatabaseDictionary must return the value for the primary key \(idColumnName.quotedDatabaseIdentifier)")
+            }
+        } else {
+            automaticRowID = false
+        }
+        
         lastWriteOperation = .Insert
         let changes = try dataMapper.insertStatement().execute { (db, completion, insertedRowID) in
             switch completion {
             case .Commit:
                 // Insertion was committed...
-                if let insertedRowID = insertedRowID {
-                    // ... in an implicit transaction. Update the id before
-                    // calling didWrite().
+                if let insertedRowID = insertedRowID where automaticRowID {
+                    // ... in an implicit transaction. Update the RowID.
                     self.updateRowIDPrimaryKey(dataMapper, rowID: insertedRowID)
                 }
+                // Execute callbacks after RowID has been set.
+                self.didWrite(db, completion: completion)
             case .Rollback:
-                // Insertion has failed: reset the id.
-                self.updateRowIDPrimaryKey(dataMapper, rowID: nil)
+                // Insertion has failed.
+                // Execute callbacks before RowID is reset.
+                self.didWrite(db, completion: completion)
+                if automaticRowID {
+                    // Reset the RowID.
+                    self.updateRowIDPrimaryKey(dataMapper, rowID: nil)
+                }
             }
-            self.didWrite(db, completion: completion)
         }
         
         updateRowIDPrimaryKey(dataMapper, rowID: changes.insertedRowID!)
