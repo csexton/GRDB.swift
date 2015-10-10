@@ -12,7 +12,7 @@ class ManagedDataController : TransactionObserverType {
     // Base directory
     let path: String
     
-    // A magic testing data: ManagedDataController.databaseWillCommit() throws
+    // A magic testing data: ManagedDataController.transactionWillCommit() throws
     // an error if this data wants to save.
     let forbiddenData: NSData?
     
@@ -51,7 +51,7 @@ class ManagedDataController : TransactionObserverType {
         }
     }
     
-    func databaseWillCommit() throws {
+    func transactionWillCommit() throws {
         do {
             let fm = NSFileManager.defaultManager()
             for (_, managedData) in pendingManagedDatas.sort({ $0.0 < $1.0 }) {
@@ -99,33 +99,35 @@ class ManagedDataController : TransactionObserverType {
         }
     }
     
-    func databaseDidCommit(db: Database) {
-        // TODO: clean up tmp directory
-        cleanup()
-    }
-    
-    func databaseDidRollback(db: Database) {
-        if restoreFileSystemAfterRollback {
-            let fm = NSFileManager.defaultManager()
+    func transactionDidComplete(db: Database, completion: TransactionCompletion) {
+        switch completion {
+        case .Commit:
+            break
             
-            for managedData in storedManagedDatas {
-                if fm.fileExistsAtPath(storageDataPath(managedData)) {
-                    try! fm.removeItemAtPath(storageDataPath(managedData))
-                }
-            }
-            
-            for managedData in movedManagedDatas {
-                let storagePath = storageDataPath(managedData)
-                let storageDir = (storagePath as NSString).stringByDeletingLastPathComponent
-                let tempPath = temporaryDataPath(managedData)
-                if fm.fileExistsAtPath(tempPath) {
-                    if !fm.fileExistsAtPath(storageDir) {
-                        try! fm.createDirectoryAtPath(storageDir, withIntermediateDirectories: true, attributes: nil)
+        case .Rollback:
+            if restoreFileSystemAfterRollback {
+                let fm = NSFileManager.defaultManager()
+                
+                for managedData in storedManagedDatas {
+                    if fm.fileExistsAtPath(storageDataPath(managedData)) {
+                        try! fm.removeItemAtPath(storageDataPath(managedData))
                     }
-                    try! fm.moveItemAtPath(tempPath, toPath: storagePath)
+                }
+                
+                for managedData in movedManagedDatas {
+                    let storagePath = storageDataPath(managedData)
+                    let storageDir = (storagePath as NSString).stringByDeletingLastPathComponent
+                    let tempPath = temporaryDataPath(managedData)
+                    if fm.fileExistsAtPath(tempPath) {
+                        if !fm.fileExistsAtPath(storageDir) {
+                            try! fm.createDirectoryAtPath(storageDir, withIntermediateDirectories: true, attributes: nil)
+                        }
+                        try! fm.moveItemAtPath(tempPath, toPath: storagePath)
+                    }
                 }
             }
         }
+        // TODO: clean up tmp directory
         cleanup()
     }
     
