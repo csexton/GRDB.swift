@@ -9,6 +9,7 @@
 - [ ] Database.lastInsertedRowID (and criticize DatabaseChanges)
 - [ ] Investigate the invalidation of RowSequence by storing a weak reference to the SelectStatement. The idea being that when the statement is nil, the sequence is invalid.
 - [ ] Reset Record.id to nil after a failed insert.
+- [ ] Record callbacks retain their records: it's a memory hog whenever one wants to insert many records in a single transaction.
 
 
 Not sure:
