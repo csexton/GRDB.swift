@@ -9,6 +9,8 @@
 - [ ] Record callbacks retain their records: it's a memory hog whenever one wants to insert many records in a single transaction.
     - [?] Subclass TrackedRecord: Record + weak reference to self in Record.insert()
     - [?] Opt-in via a property/method databaseTracked on Record which is false by default?
+    - [?] Drop didSave, didInsert etc. but expose callbacks as properties which are nil by default?
+- [ ] Record.init(row:) should be the designated initializer, and Record.init() should call it. The goal is to have a single place where to put initialization code.
 - [ ] ExternalData should be able to release their NSData when the memory is low.
 - [ ] The insertedRowID argument of TransactionCompletionCallback looks odd, and ad-hoc. Could we replace it with a flag that says whether the transaction is implicit or not, so that the callback would call database.insertedRowID if it needs it?
 
