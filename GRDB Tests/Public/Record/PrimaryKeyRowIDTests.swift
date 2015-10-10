@@ -136,6 +136,18 @@ class PrimaryKeyRowIDTests: GRDBTestCase {
         }
     }
     
+    func testRollbackedInsertWithNotNilPrimaryKeyDoeNotResetPrimaryKey() {
+        assertNoError {
+            let record = Person(id: 123456, name: "Arthur")
+            try dbQueue.inTransaction { db in
+                try record.insert(db)
+                XCTAssertEqual(record.id!, 123456)
+                return .Rollback
+            }
+            XCTAssertEqual(record.id!, 123456)
+        }
+    }
+    
     func testInsertWithNotNilPrimaryKeyThatMatchesARowThrowsDatabaseError() {
         assertNoError {
             try dbQueue.inDatabase { db in
