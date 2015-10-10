@@ -400,46 +400,51 @@ public class Record : RowConvertible, DatabaseTableMapping, DatabaseStorable {
     public func insert(db: Database) throws {
         let dataMapper = DataMapper(db, self)
         
-        // automaticRowID is true if and only if record has a nil INTEGER PRIMARY KEY id.
-        let automaticRowID: Bool
-        if case let .Managed(idColumnName) = dataMapper.primaryKey {
-            if let rowID = dataMapper.storedDatabaseDictionary[idColumnName] {
-                automaticRowID = (rowID == nil)
-            } else {
-                fatalError("\(self.dynamicType).storedDatabaseDictionary must return the value for the primary key \(idColumnName.quotedDatabaseIdentifier)")
+        // If not nil, we will manage the inserted RowID
+        let automaticRowIDColumnName: String?
+        if case let .Managed(rowIDColumnName) = dataMapper.primaryKey {
+            guard let rowID = dataMapper.storedDatabaseDictionary[rowIDColumnName] else {
+                fatalError("\(self.dynamicType).storedDatabaseDictionary must return the value for the primary key \(rowIDColumnName.quotedDatabaseIdentifier)")
             }
+            automaticRowIDColumnName = (rowID == nil) ? rowIDColumnName : nil
         } else {
-            automaticRowID = false
+            automaticRowIDColumnName = nil
         }
         
         lastWriteOperation = .Insert
-        let changes = try dataMapper.insertStatement().execute { (db, completion, insertedRowID) in
-            switch completion {
-            case .Commit:
-                // Insertion was committed...
-                if let insertedRowID = insertedRowID where automaticRowID {
-                    // ... in an implicit transaction. Update the RowID.
-                    self.updateRowIDPrimaryKey(dataMapper, rowID: insertedRowID)
-                }
-                // Execute callbacks after RowID has been set.
-                self.didWrite(db, completion: completion)
-            case .Rollback:
-                // Insertion has failed.
-                // Execute callbacks before RowID is reset.
-                self.didWrite(db, completion: completion)
-                if automaticRowID {
+        
+        if let automaticRowIDColumnName = automaticRowIDColumnName {
+            let changes = try dataMapper.insertStatement().execute { (db, completion, insertedRowID) in
+                switch completion {
+                case .Commit:
+                    // Insertion was committed...
+                    if let insertedRowID = insertedRowID {
+                        // ... in an implicit transaction. Update the RowID.
+                        self.updateFromRow(Row(dictionary: [automaticRowIDColumnName: insertedRowID]))
+                    }
+                    // Execute callbacks after RowID has been set.
+                    self.didWrite(db, completion: completion)
+                case .Rollback:
+                    // Insertion has failed.
+                    // Execute callbacks before RowID is reset.
+                    self.didWrite(db, completion: completion)
                     // Reset the RowID.
-                    self.updateRowIDPrimaryKey(dataMapper, rowID: nil)
+                    self.updateFromRow(Row(dictionary: [automaticRowIDColumnName: nil]))
                 }
+            }
+            
+            updateFromRow(Row(dictionary: [automaticRowIDColumnName: changes.insertedRowID!]))
+        } else {
+            try dataMapper.insertStatement().execute { (db, completion, insertedRowID) in
+                self.didWrite(db, completion: completion)
             }
         }
         
-        updateRowIDPrimaryKey(dataMapper, rowID: changes.insertedRowID!)
         databaseEdited = false
     }
     
-    private func updateRowIDPrimaryKey(dataMapper: DataMapper, rowID: Int64?) {
-        guard case let .Managed(idColumnName) = dataMapper.primaryKey else { return }
+    private func updateRowID(rowID: Int64?, primaryKey: PrimaryKey) {
+        guard case let .Managed(idColumnName) = primaryKey else { return }
         updateFromRow(Row(dictionary: [idColumnName: rowID]))
     }
     
