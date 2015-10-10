@@ -96,6 +96,28 @@ class PrimaryKeyRowIDTests: GRDBTestCase {
         }
     }
     
+    func testRollbackedInsertWithNilPrimaryKeyResetsPrimaryKey() {
+        assertNoError {
+            let record = Person(name: "Arthur")
+            try dbQueue.inTransaction { db in
+                XCTAssertTrue(record.id == nil)
+                try record.insert(db)
+                XCTAssertTrue(record.id != nil)
+                
+                let row = Row.fetchOne(db, "SELECT * FROM persons WHERE id = ?", arguments: [record.id])!
+                for (key, value) in record.storedDatabaseDictionary {
+                    if let dbv = row[key] {
+                        XCTAssertEqual(dbv, value?.databaseValue ?? .Null)
+                    } else {
+                        XCTFail("Missing column \(key) in fetched row")
+                    }
+                }
+                return .Rollback
+            }
+            XCTAssertTrue(record.id == nil)
+        }
+    }
+    
     func testInsertWithNotNilPrimaryKeyThatDoesNotMatchAnyRowInsertsARow() {
         assertNoError {
             try dbQueue.inDatabase { db in
