@@ -1,6 +1,19 @@
 Release Notes
 =============
 
+## Next Release
+
+**New**
+
+- `TransactionCompletionCallback`: be notified of the commit or rollback of any statement execution.
+- Record events: didInsert, didUpdate, didSave, didDelete methods are called after a record insertion, update or deletion, has been committed or rollbacked.
+
+**Breaking Changes**
+
+- `TransactionObserverType.databaseWillCommit` has been renamed `TransactionObserverType.transactionWillCommit`.
+- `TransactionObserverType.databaseDidCommit` and `databaseDidRollback` have been merged into `TransactionObserverType.transactionDidComplete`.
+
+
 ## 0.22.0
 
 Released october 8, 2015
