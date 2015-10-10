@@ -16,29 +16,24 @@ public final class UpdateStatement : Statement {
     Executes the SQL query.
     
     - parameter arguments: Optional query arguments.
+    - parameter callback: An optional transaction completion callback.
     - returns: A DatabaseChanges.
     - throws: A DatabaseError whenever a SQLite error occurs.
     */
-    public func execute(arguments arguments: StatementArguments? = nil) throws -> DatabaseChanges {
+    public func execute(arguments arguments: StatementArguments? = nil, callback: TransactionCompletionCallback? = nil) throws -> DatabaseChanges {
         if let arguments = arguments {
             self.arguments = arguments
         }
+        
+        database.updateStatementWillExecute(callback)
         
         reset()
         
         let code = sqlite3_step(sqliteStatement)
         guard code == SQLITE_DONE else {
-            // When sqlite3_commit_hook interrupts a transaction, SQLite
-            // generates an automatic SQLITE_CONSTRAINT error.
-            //
-            // We need to ignore this error, because in GRDB, transactions are
-            // interrupted with an *error*: TransactionObserverType.databaseWillCommit()
-            // is a throwing function.
-            //
-            // This error must bubble up:
+            // Error may be a consequence of TransactionObserverType.transactionWillCommit().
+            // Let database handle this case:
             try database.updateStatementDidFail()
-            
-            // Process regular error
             throw DatabaseError(code: code, message: database.lastErrorMessage, sql: sql, arguments: self.arguments)
         }
         
