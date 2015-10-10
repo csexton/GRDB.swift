@@ -98,8 +98,12 @@ class ExternalData {
         }
     }
     
+    func reload() {
+        dataValue = .Unresolved
+    }
     
-    // Data
+    
+    // MARK: - Data
     
     private enum DataValue {
         case Unresolved
@@ -148,7 +152,7 @@ class ExternalData {
     private var dataValue: DataValue = .Unresolved
     
     
-    // Paths
+    // MARK: - Paths
     
     private static var tempStoragePathTemplate = (NSTemporaryDirectory() as NSString).stringByAppendingPathComponent("ExternalData.XXXXXX")
     private var buildPath: () -> String?
@@ -174,7 +178,7 @@ class ExternalData {
     }
     
     
-    // Support
+    // MARK: - Support
     
     private func createIntermediateDirectoriesIfNeeded(fm: NSFileManager, path: String) throws {
         let directoryPath = (path as NSString).stringByDeletingLastPathComponent
@@ -218,6 +222,9 @@ class ExternalData {
         }
     }
 }
+
+
+// MARK: - RecordWithExternalData
 
 class RecordWithExternalData : Record {
     var id: Int64?
@@ -280,6 +287,11 @@ class RecordWithExternalData : Record {
     override func delete(db: Database) throws -> Record.DeletionResult {
         try externalData.delete()
         return try super.delete(db)
+    }
+    
+    override func reload(db: Database) throws {
+        externalData.reload()
+        try super.reload(db)
     }
     
     override func didSave(db: Database, completion: TransactionCompletion) {
@@ -436,6 +448,23 @@ class ExternalDataTests : GRDBTestCase {
             
             // Data property is not lost
             XCTAssertEqual(record.data, "foo".dataUsingEncoding(NSUTF8StringEncoding))
+        }
+    }
+    
+    func testReload() {
+        assertNoError {
+            // Test that we can stored data in the file system...
+            let record = RecordWithExternalData()
+            try dbQueue.inDatabase { db in
+                record.data = "foo".dataUsingEncoding(NSUTF8StringEncoding)
+                try record.save(db)
+                
+                record.data = "bar".dataUsingEncoding(NSUTF8StringEncoding)
+                XCTAssertEqual(record.data, "bar".dataUsingEncoding(NSUTF8StringEncoding))
+                
+                try record.reload(db)
+                XCTAssertEqual(record.data, "foo".dataUsingEncoding(NSUTF8StringEncoding))
+            }
         }
     }
 }

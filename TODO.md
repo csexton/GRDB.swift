@@ -10,7 +10,7 @@
     - [?] Subclass TrackedRecord: Record + weak reference to self in Record.insert()
     - [?] Opt-in via a property/method databaseTracked on Record which is false by default?
 - [ ] ExternalData should be able to release their NSData when the memory is low.
-- [ ] ExternalData.reload() in Record.reload()
+- [ ] Do we need the database argument in TransactionCompletionCallback?
 
 
 Not sure:
