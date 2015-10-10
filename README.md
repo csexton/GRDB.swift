@@ -524,7 +524,7 @@ Here is the support provided by GRDB.swift for the various [date formats](https:
 
 > :point_up: **Note**: This format is lexically comparable with SQLite's CURRENT_TIMESTAMP, which means that your ORDER BY clauses will behave as expected.
 >
-> Yet, this format may not fit your needs. We provide [below](#custom-value-types) some sample code for storing dates as timestamps. You can adapt it for your application.
+> Yet, this format may not fit your needs. We provide below some sample code for [storing dates as timestamps](#custom-value-types). You can adapt it for your application.
 
 Declare DATETIME columns in your tables:
 
@@ -979,13 +979,10 @@ public protocol TransactionObserverType : class {
     func databaseDidChangeWithEvent(event: DatabaseEvent)
     
     // An opportunity to rollback pending changes by throwing an error.
-    func databaseWillCommit() throws
+    func transactionWillCommit() throws
     
-    // Database changes have been committed.
-    func databaseDidCommit(db: Database)
-    
-    // Database changes have been rollbacked.
-    func databaseDidRollback(db: Database)
+    // Transaction has completed with a Commit, or a Rollback.
+    func transactionDidComplete(db: Database, completion: TransactionCompletion)
 }
 ```
 
@@ -1001,17 +998,17 @@ All protocol callbacks are optional, and invoked on the database queue.
 
 **All database changes are notified** to databaseDidChangeWithEvent, inserts, updates and deletes, including indirect ones triggered by ON DELETE and ON UPDATE actions associated to [foreign keys](https://www.sqlite.org/foreignkeys.html#fk_actions).
 
-Those changes are not actually applied until databaseDidCommit is called. On the other side, databaseDidRollback confirms their invalidation:
+Those changes are not actually applied until transactionDidComplete is called.
 
 ```swift
 try dbQueue.inTransaction { db in
     try db.execute("INSERT ...") // didChange
-    return .Commit               // willCommit, didCommit
+    return .Commit               // willCommit, didComplete(Commit)
 }
 
 try dbQueue.inTransaction { db in
     try db.execute("INSERT ...") // didChange
-    return .Rollback             // didRollback
+    return .Rollback             // didComplete(Rollback)
 }
 ```
 
@@ -1019,25 +1016,25 @@ Database statements that are executed outside of an explicit transaction do not 
 
 ```swift
 try dbQueue.inDatabase { db in
-    try db.execute("INSERT ...") // didChange, willCommit, didCommit
-    try db.execute("UPDATE ...") // didChange, willCommit, didCommit
+    try db.execute("INSERT ...") // didChange, willCommit, didComplete(Commit)
+    try db.execute("UPDATE ...") // didChange, willCommit, didComplete(Commit)
 }
 ```
 
-**Eventual errors** thrown from databaseWillCommit are exposed to the application code:
+**Eventual errors** thrown from transactionWillCommit are exposed to the application code:
 
 ```swift
 do {
     try dbQueue.inTransaction { db in
         ...
-        return .Commit           // willCommit (throws), didRollback
+        return .Commit           // willCommit (throws), didComplete(Rollback)
     }
 } catch {
     // The error thrown by the transaction observer.
 }
 ```
 
-> :point_up: **Note**: The databaseDidChangeWithEvent and databaseWillCommit callbacks must not touch the SQLite database. This limitation does not apply to databaseDidCommit and databaseDidRollback which can use their database argument.
+> :point_up: **Note**: The databaseDidChangeWithEvent and transactionWillCommit callbacks must not touch the SQLite database. This limitation does not apply to transactionDidComplete which can use its database argument.
 
 
 ### Sample Transaction Observer: TableChangeObserver
@@ -1059,24 +1056,25 @@ class TableChangeObserver : NSObject, TransactionObserverType {
         changedTableNames.insert(event.tableName)
     }
     
-    func databaseDidCommit(db: Database) {
-        // Extract the names of changed tables, and reset until next
-        // database event:
-        let changedTableNames = self.changedTableNames
-        self.changedTableNames = []
-        
-        // Notify
-        dispatch_async(dispatch_get_main_queue()) {
-            NSNotificationCenter.defaultCenter().postNotificationName(
-                DatabaseTablesDidChangeNotification,
-                object: self,
-                userInfo: [ChangedTableNamesKey: changedTableNames])
+    func transactionDidComplete(db: Database, completion: TransactionCompletion) {
+        switch completion {
+        case .Commit:
+            // Extract the names of changed tables, and reset until next
+            // database event:
+            let changedTableNames = self.changedTableNames
+            self.changedTableNames = []
+
+            // Notify
+            dispatch_async(dispatch_get_main_queue()) {
+                NSNotificationCenter.defaultCenter().postNotificationName(
+                    DatabaseTablesDidChangeNotification,
+                    object: self,
+                    userInfo: [ChangedTableNamesKey: changedTableNames])
+            }
+        case .Rollback:
+            // Reset until next database event:
+            self.changedTableNames = []
         }
-    }
-    
-    func databaseDidRollback(db: Database) {
-        // Reset until next database event:
-        self.changedTableNames = []
     }
 }
 ```
