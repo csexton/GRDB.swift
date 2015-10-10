@@ -156,6 +156,8 @@
 		56BB862C1BA988F2001F9168 /* FMResultSet.m in Sources */ = {isa = PBXBuildFile; fileRef = 56BB86221BA988F2001F9168 /* FMResultSet.m */; settings = {ASSET_TAGS = (); }; };
 		56BB862F1BA98AA9001F9168 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 56BB862E1BA98AA9001F9168 /* libsqlite3.tbd */; };
 		56BB86311BA98AB0001F9168 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 56BB86301BA98AB0001F9168 /* libsqlite3.tbd */; };
+		56C4557C1BC9631D00FB6D4F /* RecordTransactionCallbacks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56C4557B1BC9631D00FB6D4F /* RecordTransactionCallbacks.swift */; settings = {ASSET_TAGS = (); }; };
+		56C4557D1BC9631D00FB6D4F /* RecordTransactionCallbacks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56C4557B1BC9631D00FB6D4F /* RecordTransactionCallbacks.swift */; settings = {ASSET_TAGS = (); }; };
 		56CA21B71BB3F89F009A04C5 /* NSDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56CA21B61BB3F89F009A04C5 /* NSDataTests.swift */; settings = {ASSET_TAGS = (); }; };
 		56CA21B81BB3F89F009A04C5 /* NSDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56CA21B61BB3F89F009A04C5 /* NSDataTests.swift */; settings = {ASSET_TAGS = (); }; };
 		56CA21BA1BB3FCF7009A04C5 /* BlobTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56CA21B91BB3FCF7009A04C5 /* BlobTests.swift */; settings = {ASSET_TAGS = (); }; };
@@ -374,6 +376,7 @@
 		56BB862D1BA98933001F9168 /* GRDBTests-Bridging.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "GRDBTests-Bridging.h"; sourceTree = "<group>"; };
 		56BB862E1BA98AA9001F9168 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS9.0.sdk/usr/lib/libsqlite3.tbd; sourceTree = DEVELOPER_DIR; };
 		56BB86301BA98AB0001F9168 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
+		56C4557B1BC9631D00FB6D4F /* RecordTransactionCallbacks.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RecordTransactionCallbacks.swift; sourceTree = "<group>"; };
 		56CA21B61BB3F89F009A04C5 /* NSDataTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NSDataTests.swift; sourceTree = "<group>"; };
 		56CA21B91BB3FCF7009A04C5 /* BlobTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BlobTests.swift; sourceTree = "<group>"; };
 		56CA21FE1BB414FE009A04C5 /* SQLite.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = SQLite.xcodeproj; path = SQLite.swift/SQLite.xcodeproj; sourceTree = "<group>"; };
@@ -614,6 +617,7 @@
 				56A238311B9C74A90082EB20 /* RecordFetchTests.swift */,
 				56A238321B9C74A90082EB20 /* RecordInitializersTests.swift */,
 				56A238331B9C74A90082EB20 /* RecordSubClassTests.swift */,
+				56C4557B1BC9631D00FB6D4F /* RecordTransactionCallbacks.swift */,
 				56A238351B9C74A90082EB20 /* RecordUpdateFromRowTests.swift */,
 				56A5E4081BA2BCF900707640 /* RecordWithColumnNameManglingTests.swift */,
 			);
@@ -1145,6 +1149,7 @@
 				56BB86241BA988F2001F9168 /* FMDatabase.m in Sources */,
 				56CA221D1BB41533009A04C5 /* FMDBPerformanceTests.swift in Sources */,
 				56AC8CCF1BA3F2AD009E4319 /* ConcurrencyTests.swift in Sources */,
+				56C4557D1BC9631D00FB6D4F /* RecordTransactionCallbacks.swift in Sources */,
 				56A238461B9C74A90082EB20 /* DictionaryRowTests.swift in Sources */,
 				56CA22201BB4153F009A04C5 /* StephenCelisSQLitePerformanceTests.swift in Sources */,
 				56BB86261BA988F2001F9168 /* FMDatabaseAdditions.m in Sources */,
@@ -1209,6 +1214,7 @@
 				56A2384F1B9C74A90082EB20 /* MinimalPrimaryKeyRowIDTests.swift in Sources */,
 				56BB86231BA988F2001F9168 /* FMDatabase.m in Sources */,
 				56AC8CCE1BA3F2AD009E4319 /* ConcurrencyTests.swift in Sources */,
+				56C4557C1BC9631D00FB6D4F /* RecordTransactionCallbacks.swift in Sources */,
 				56A238451B9C74A90082EB20 /* DictionaryRowTests.swift in Sources */,
 				56BB86251BA988F2001F9168 /* FMDatabaseAdditions.m in Sources */,
 				56A238491B9C74A90082EB20 /* SelectStatementTests.swift in Sources */,
