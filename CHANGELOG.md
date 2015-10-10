@@ -6,7 +6,9 @@ Release Notes
 **New**
 
 - `TransactionCompletionCallback`: be notified of the commit or rollback of any statement execution.
-- Record events: didInsert, didUpdate, didSave, didDelete methods are called after a record insertion, update or deletion, has been committed or rollbacked.
+- `Record.didInsert`, `didUpdate`, `didSave`, and `didDelete` methods are called after a record insertion, update or deletion, has been committed or rollbacked.
+- `Record.reload()` is no longer declared as `final`.
+
 
 **Breaking Changes**
 
