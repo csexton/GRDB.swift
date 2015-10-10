@@ -68,6 +68,9 @@ public class Record : RowConvertible, DatabaseTableMapping, DatabaseStorable {
         updateFromRow(row)
     }
     
+    
+    // MARK: - Events
+    
     /**
     Don't call this method directly. It is called after a Record has been
     fetched or reloaded.
@@ -83,6 +86,73 @@ public class Record : RowConvertible, DatabaseTableMapping, DatabaseStorable {
         // Row may be a metal row which will turn invalid as soon as the SQLite
         // statement is iterated. We need to store an immutable and safe copy.
         referenceRow = row.copy()
+    }
+    
+    /**
+    This method is called after a record insertion has been committed, or
+    rollbacked. A call to didSave() follows immediately.
+    
+    Note: in a single transaction, only the last write operation is notified: if
+    the record is updated or deleted after its insertion, didInsert() is not
+    called.
+    
+    *Important*: subclasses must invoke super's implementation.
+    
+    - parameter db: A Database.
+    - parameter completion: .Commit, or .Rollback.
+    */
+    public func didInsert(db: Database, completion: TransactionCompletion) {
+        
+    }
+    
+    /**
+    This method is called after a record update has been committed, or
+    rollbacked. A call to didSave() follows immediately.
+    
+    Note: in a single transaction, only the last write operation is notified: if
+    the record is updated twice, didUpdate() is only called once. It the record
+    is deleted after an update, didUpdate() is not called.
+    
+    *Important*: subclasses must invoke super's implementation.
+    
+    - parameter db: A Database.
+    - parameter completion: .Commit, or .Rollback.
+    */
+    public func didUpdate(db: Database, completion: TransactionCompletion) {
+        
+    }
+    
+    /**
+    This method is called after a record insertion or update has been committed,
+    or rollbacked.
+    
+    Note: in a single transaction, only the last write operation is notified: if
+    the record is inserted then updated, didSave() is only called once. It the
+    record is eventually deleted, didSave() is not called.
+    
+    *Important*: subclasses must invoke super's implementation.
+    
+    - parameter db: A Database.
+    - parameter completion: .Commit, or .Rollback.
+    */
+    public func didSave(db: Database, completion: TransactionCompletion) {
+        
+    }
+    
+    /**
+    This method is called after a record deletion has been committed,
+    or rollbacked.
+    
+    Note: in a single transaction, only the last write operation is notified: if
+    the record is eventually inserted again, didDelete() is not called.
+    
+    *Important*: subclasses must invoke super's implementation.
+    
+    - parameter db: A Database.
+    - parameter completion: .Commit, or .Rollback.
+    */
+    public func didDelete(db: Database, completion: TransactionCompletion) {
+        
     }
     
     
@@ -286,6 +356,31 @@ public class Record : RowConvertible, DatabaseTableMapping, DatabaseStorable {
 
     // MARK: - CRUD
     
+    private enum WriteOperation {
+        case None
+        case Insert
+        case Update
+        case Delete
+    }
+    
+    private var lastWriteOperation: WriteOperation = .None
+    private func didWrite(db: Database, completion: TransactionCompletion) {
+        switch lastWriteOperation {
+        case .None:
+            break
+        case .Insert:
+            didInsert(db, completion: completion)
+            didSave(db, completion: completion)
+        case .Update:
+            didUpdate(db, completion: completion)
+            didSave(db, completion: completion)
+        case .Delete:
+            didDelete(db, completion: completion)
+        }
+        lastWriteOperation = .None
+    }
+    
+    
     /**
     Executes an INSERT statement to insert the record.
     
@@ -299,19 +394,31 @@ public class Record : RowConvertible, DatabaseTableMapping, DatabaseStorable {
     */
     public func insert(db: Database) throws {
         let dataMapper = DataMapper(db, self)
-        let changes = try dataMapper.insertStatement().execute()
         
-        // Update managed primary key if needed
-        if case .Managed(let managedColumn) = dataMapper.primaryKey {
-            guard let rowID = dataMapper.storedDatabaseDictionary[managedColumn] else {
-                fatalError("\(self.dynamicType).storedDatabaseDictionary must return the value for the primary key \(managedColumn.quotedDatabaseIdentifier)")
+        lastWriteOperation = .Insert
+        let changes = try dataMapper.insertStatement().execute { (db, completion, insertedRowID) in
+            switch completion {
+            case .Commit:
+                // Insertion was committed...
+                if let insertedRowID = insertedRowID {
+                    // ... in an implicit transaction. Update the id before
+                    // calling didWrite().
+                    self.updateRowIDPrimaryKey(dataMapper, rowID: insertedRowID)
+                }
+            case .Rollback:
+                // Insertion has failed: reset the id.
+                self.updateRowIDPrimaryKey(dataMapper, rowID: nil)
             }
-            if rowID == nil {
-                updateFromRow(Row(dictionary: [managedColumn: changes.insertedRowID]))
-            }
+            self.didWrite(db, completion: completion)
         }
         
+        updateRowIDPrimaryKey(dataMapper, rowID: changes.insertedRowID!)
         databaseEdited = false
+    }
+    
+    private func updateRowIDPrimaryKey(dataMapper: DataMapper, rowID: Int64?) {
+        guard case let .Managed(idColumnName) = dataMapper.primaryKey else { return }
+        updateFromRow(Row(dictionary: [idColumnName: rowID]))
     }
     
     /**
@@ -329,7 +436,10 @@ public class Record : RowConvertible, DatabaseTableMapping, DatabaseStorable {
               updated.
     */
     public func update(db: Database) throws {
-        let changes = try DataMapper(db, self).updateStatement().execute()
+        lastWriteOperation = .Update
+        let changes = try DataMapper(db, self).updateStatement().execute { (db, completion, _) in
+            self.didWrite(db, completion: completion)
+        }
         if changes.changedRowCount == 0 {
             throw RecordError.RecordNotFound(self)
         }
@@ -363,6 +473,7 @@ public class Record : RowConvertible, DatabaseTableMapping, DatabaseStorable {
         }
         
         do {
+            // TODO: the update failure because of RecordError.RecordNotFound should not be notified to didUpdate()
             try update(db)
         } catch RecordError.RecordNotFound {
             return try insert(db)
@@ -379,7 +490,10 @@ public class Record : RowConvertible, DatabaseTableMapping, DatabaseStorable {
     - throws: A DatabaseError is thrown whenever a SQLite error occurs.
     */
     public func delete(db: Database) throws -> DeletionResult {
-        let changes = try DataMapper(db, self).deleteStatement().execute()
+        lastWriteOperation = .Delete
+        let changes = try DataMapper(db, self).deleteStatement().execute { (db, completion, _) in
+            self.didWrite(db, completion: completion)
+        }
         
         // Future calls to update will throw RecordNotFound. Make the user
         // a favor and make sure this error is thrown even if she checks the
