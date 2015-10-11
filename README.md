@@ -1131,6 +1131,18 @@ See also the [Record](#records) class, which builds on top of RowConvertible and
 
 ## Records
 
+- [Overview](#record-overview)
+- [Core Methods](#core-methods)
+- [Fetching Records](#fetching-records)
+- [Insert, Update and Delete](#insert-update-and-delete)
+- [Record Initializers](#record-initializers)
+- [Changes Tracking](#changes-tracking)
+- [Record Errors](#record-errors)
+- [Advice](#advice)
+
+
+### Record Overview
+
 **Record** is a class that wraps a table row or the result of any query, provides CRUD operations, and changes tracking. It is designed to be subclassed.
 
 ```swift
@@ -1179,14 +1191,6 @@ Yet, it does a few things well:
         try person.save(db)
     }
     ```
-
-- [Core Methods](#core-methods)
-- [Fetching Records](#fetching-records)
-- [Insert, Update and Delete](#insert-update-and-delete)
-- [Record Initializers](#record-initializers)
-- [Changes Tracking](#changes-tracking)
-- [Record Errors](#record-errors)
-- [Advice](#advice)
 
 
 ### Core Methods
@@ -1382,8 +1386,8 @@ class Person : Record {
     var age: Int?
     var name: String?
     
-    // Person(age: 41, name: "Arthur")
-    init(id: Int64? = nil, age: Int?, name: String?) {
+    // Person(name: "Arthur", age: 41)
+    init(id: Int64? = nil, name: String?, age: Int?) {
         self.id = id
         self.age = age
         self.name = name
