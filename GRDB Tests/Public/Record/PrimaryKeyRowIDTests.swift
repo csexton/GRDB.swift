@@ -96,7 +96,7 @@ class PrimaryKeyRowIDTests: GRDBTestCase {
         }
     }
     
-    func testRollbackedInsertWithNilPrimaryKeyResetsPrimaryKey() {
+    func testRollbackedInsertWithNilPrimaryKeyDoesNotResetPrimaryKey() {
         assertNoError {
             let record = Person(name: "Arthur")
             try dbQueue.inTransaction { db in
@@ -114,7 +114,7 @@ class PrimaryKeyRowIDTests: GRDBTestCase {
                 }
                 return .Rollback
             }
-            XCTAssertTrue(record.id == nil)
+            XCTAssertTrue(record.id != nil)
         }
     }
     

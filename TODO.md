@@ -6,12 +6,8 @@
 - [ ] `IN (?)` sql snippet, with an array argument.
 - [ ] Database.lastInsertedRowID (and criticize DatabaseChanges)
 - [ ] Investigate the invalidation of RowSequence by storing a weak reference to the SelectStatement. The idea being that when the statement is nil, the sequence is invalid.
-- [ ] Record callbacks retain their records: it's a memory hog whenever one wants to insert many records in a single transaction.
-    - [?] Subclass TrackedRecord: Record + weak reference to self in Record.insert()
-    - [?] Opt-in via a property/method databaseTracked on Record which is false by default?
-    - [?] Drop didSave, didInsert etc. but expose callbacks as properties which are nil by default?
-- [ ] ExternalData should be able to release their NSData when the memory is low.
 - [ ] The insertedRowID argument of TransactionCompletionCallback looks odd, and ad-hoc. Could we replace it with a flag that says whether the transaction is implicit or not, so that the callback would call database.insertedRowID if it needs it?
+- [ ] How could Record use TransactionCompletionCallback in its insert, update, save and delete methods? Beware that retaining record until the transaction completion is not an option, since it would be a memory problem.
 
 
 Not sure:

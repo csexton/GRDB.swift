@@ -7,7 +7,6 @@ Release Notes
 
 - `Row()` initializes an empty row.
 - `TransactionCompletionCallback`: be notified of the commit or rollback of any statement execution.
-- `Record.didInsert`, `didUpdate`, `didSave`, and `didDelete` methods are called after a record insertion, update or deletion, has been committed or rollbacked.
 - `Record.reload()` is no longer declared as `final`.
 
 
