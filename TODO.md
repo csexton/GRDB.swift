@@ -1,12 +1,9 @@
 - [ ] #2: this commit may be how stephencelis fixed it: https://github.com/stephencelis/SQLite.swift/commit/8f64e357c3a6668c5f011c91ba33be3e8d4b88d0
-- [ ] Use @warn_unused_result where applicable
 - [ ] Study SQLCipher
 - [ ] Study custom SQL functions
 - [ ] Study custom collations
 - [ ] `IN (?)` sql snippet, with an array argument.
-- [ ] Database.lastInsertedRowID (and criticize DatabaseChanges)
-- [ ] Investigate the invalidation of RowSequence by storing a weak reference to the SelectStatement. The idea being that when the statement is nil, the sequence is invalid.
-- [ ] The insertedRowID argument of TransactionCompletionCallback looks odd, and ad-hoc. Could we replace it with a flag that says whether the transaction is implicit or not, so that the callback would call database.insertedRowID if it needs it?
+- [ ] The insertedRowID argument of TransactionCompletionCallback looks odd, and ad-hoc. Could we replace it with a flag that says whether the transaction is implicit or not, so that the callback would call db.lastInsertedRowID if it needs it?
 - [ ] How could Record use TransactionCompletionCallback in its insert, update, save and delete methods? Beware that retaining record until the transaction completion is not an option, since it would be a memory problem.
 
 

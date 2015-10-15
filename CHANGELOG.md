@@ -1,7 +1,18 @@
 Release Notes
 =============
 
-## Next Release
+## 0.24.0
+
+Released October 14, 2015
+
+**Fixed**
+
+- Restored iOS7 compatibility
+
+
+## 0.23.0
+
+Released October 13, 2015
 
 **New**
 
@@ -15,10 +26,15 @@ Release Notes
 - `TransactionObserverType.databaseWillCommit` has been renamed `TransactionObserverType.transactionWillCommit`.
 - `TransactionObserverType.databaseDidCommit` and `databaseDidRollback` have been merged into `TransactionObserverType.transactionDidComplete`.
 
+**Breaking Change**
+
+- NSData is now the canonical type for blobs. The former intermediate `Blob` type has been removed.
+- `DatabaseValue.dataNoCopy()` has turned useless, and has been removed.
+
 
 ## 0.22.0
 
-Released october 8, 2015
+Released October 8, 2015
 
 **New**
 
@@ -28,7 +44,7 @@ Released october 8, 2015
 
 ## 0.21.0
 
-Released october 1, 2015
+Released October 1, 2015
 
 **Fixed**
 
